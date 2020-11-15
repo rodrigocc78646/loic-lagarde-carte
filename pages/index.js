@@ -1,65 +1,50 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import * as d3 from "d3";
+import * as topojson from "topojson-client";
+import { getTopojson } from "../lib/map";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [countries, setCountries] = useState(null);
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    getTopojson((tj) => setCountries(tj));
+  });
+
+  if (!countries) {
+    return <div>Loading data...</div>;
+  }
+
+  const projection = d3.geoMercator().scale(120).translate([400, 350]);
+  const geoPath = d3.geoPath().projection(projection);
+
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+    <div className="home-content">
+      <p className="selected-country">
+        {name ? `Would now show photos for: ${name}` : "Please select a country"}
+      </p>
+      <svg
+        viewBox={`0 0 800 500`}
+        preserveAspectRatio="xMidYMid"
+        className="world-map"
+      >
+        <g>
+          {topojson
+            .feature(countries, countries.objects.countries1)
+            .features.map((d, i) => (
+              <path
+                key={`country-${i}`}
+                d={geoPath(d)}
+                stroke="#eee"
+                className={`world-map-country ${
+                  name === d.properties.name && "selected"
+                }`}
+                onClick={() => setName(d.properties.name)}
+              />
+            ))}
+        </g>
+      </svg>
     </div>
-  )
+  );
 }
